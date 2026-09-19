@@ -11,7 +11,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
-interface MovieRepository : JpaRepository<Movie, String> {
+interface MovieRepository : JpaRepository<Movie, Int> {
     fun findByNameContainingIgnoreCase(
         name: String,
         pageable: Pageable
