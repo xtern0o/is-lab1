@@ -12,4 +12,3 @@ data class PersonResponse(
     val height: Int,
     val nationality: Country?,
 )
-

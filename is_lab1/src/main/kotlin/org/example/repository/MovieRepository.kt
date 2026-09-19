@@ -27,6 +27,10 @@ interface MovieRepository : JpaRepository<Movie, Int> {
         pageable: Pageable,
     ): Page<Movie>
 
+    fun existsByDirectorId(id: Int): Boolean
+    fun existsByScreenwriterId(id: Int): Boolean
+    fun existsByOperatorId(id: Int): Boolean
+
     @EntityGraph(
         attributePaths = [
             "coordinates",
