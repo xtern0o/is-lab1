@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size
 
 @Entity
 @Table(name = "locations")
-open class Location(
+class Location(
     @field:Id
     @field:GeneratedValue(strategy = GenerationType.IDENTITY)
     @field:Column(nullable = false, updatable = false)

@@ -19,9 +19,9 @@ dependencies {
     implementation("org.springframework:spring-orm")
     implementation("org.springframework:spring-tx")
 
+    implementation("org.springframework.data:spring-data-jpa:3.4.7")
     implementation("org.hibernate.orm:hibernate-core:7.4.7.Final")
     runtimeOnly("org.postgresql:postgresql:42.7.13")
-
     implementation("org.hibernate.validator:hibernate-validator:8.0.2.Final")
 
     testImplementation(kotlin("test"))

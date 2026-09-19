@@ -4,6 +4,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -12,6 +13,7 @@ import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.PositiveOrZero
 import org.example.entity.enums.MovieGenre
 import org.example.entity.enums.MpaaRating
 import org.jetbrains.annotations.NotNull
@@ -36,9 +38,11 @@ class Movie(
     @field:Column(nullable = false, updatable = false)
     var creationDate: Date? = null,
 
-    @field:Positive
+    // противоречие с ТЗ - выставил >= 0, т. к. есть требование
+    // реализовать операцию для получения фильмов с oscarsCount >= 0
+    @field:PositiveOrZero
     @field:Column(nullable = false)
-    var oscarsCount: Int = 1,
+    var oscarsCount: Int = 0,
 
     @field:NotNull
     @field:Positive
@@ -56,10 +60,10 @@ class Movie(
     @field:NotNull
     var director: Person? = null,
 
-    @field:ManyToOne
+    @field:ManyToOne(fetch = FetchType.LAZY)
     var screenwriter: Person? = null,
 
-    @field:ManyToOne
+    @field:ManyToOne(fetch = FetchType.LAZY)
     var operator: Person? = null,
 
     @field:Positive
