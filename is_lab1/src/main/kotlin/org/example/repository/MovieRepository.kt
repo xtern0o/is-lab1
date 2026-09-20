@@ -31,6 +31,8 @@ interface MovieRepository : JpaRepository<Movie, Int> {
     fun existsByScreenwriterId(id: Int): Boolean
     fun existsByOperatorId(id: Int): Boolean
 
+    fun existsByCoordinatesId(id: Int): Boolean
+
     @EntityGraph(
         attributePaths = [
             "coordinates",

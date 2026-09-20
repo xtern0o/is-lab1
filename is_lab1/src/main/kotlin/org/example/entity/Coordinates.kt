@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
+import org.example.dto.coordinates.response.CoordinatesResponse
 
 @Entity
 @Table(name = "coordinates")
@@ -19,9 +20,15 @@ class Coordinates(
 
     @field:Column(nullable = false)
     @field:Max(455)
-    private var x: Float,
+    var x: Float,
 
     @field:Column(nullable = false)
     @field:Min(-123)
-    private var y: Long
+    var y: Long
+)
+
+fun Coordinates.toResponse() = CoordinatesResponse(
+    id = requireNotNull(id),
+    x = x,
+    y = y
 )
