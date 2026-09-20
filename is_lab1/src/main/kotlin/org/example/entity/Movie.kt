@@ -14,6 +14,7 @@ import jakarta.persistence.Table
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Positive
 import jakarta.validation.constraints.PositiveOrZero
+import org.example.dto.movie.response.MovieResponse
 import org.example.entity.enums.MovieGenre
 import org.example.entity.enums.MpaaRating
 import org.jetbrains.annotations.NotNull
@@ -83,3 +84,20 @@ class Movie(
         }
     }
 }
+
+fun Movie.toResponse() = MovieResponse(
+    id = requireNotNull(id),
+    name = name,
+    coordinatesId = requireNotNull(coordinates?.id),
+    creationDate = requireNotNull(creationDate),
+    oscarsCount = oscarsCount,
+    budget = requireNotNull(budget),
+    totalBoxOffice = totalBoxOffice,
+    mpaaRating = mpaaRating,
+    directorId = requireNotNull(director?.id),
+    screenwriterId = screenwriter?.id,
+    operatorId = operator?.id,
+    length = length,
+    goldenPalmCount = goldenPalmCount,
+    genre = genre,
+)
