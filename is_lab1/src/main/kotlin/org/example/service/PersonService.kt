@@ -80,9 +80,9 @@ class PersonService(
 
 
     private fun findPerson(id: Int): Person =
-        personRepository.findById(id).orElseThrow {
-            throw NoSuchElementException("человек с id=$id НЕ найден...")
-        }
+        personRepository.findOneById(id)
+            ?: throw NoSuchElementException("человек с id=$id НЕ найден...")
+
 
     private fun findLocation(id: Int): Location =
         locationRepository.findById(id).orElseThrow {
