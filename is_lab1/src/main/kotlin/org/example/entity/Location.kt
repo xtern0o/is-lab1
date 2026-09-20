@@ -8,6 +8,7 @@ import jakarta.persistence.Id
 import jakarta.persistence.Table
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
+import org.example.dto.location.response.LocationResponse
 
 @Entity
 @Table(name = "locations")
@@ -30,4 +31,12 @@ class Location(
     @field:Size(max = 389)
     @field:Column(length = 389)
     var name: String? = null,
+)
+
+fun Location.toResponse() = LocationResponse(
+    id = requireNotNull(id),
+    x = x,
+    y = y,
+    z = requireNotNull(z),
+    name = name,
 )

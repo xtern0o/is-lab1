@@ -33,7 +33,7 @@ class PersonService(
 
     @Transactional(readOnly = true)
     fun getById(id: Int): PersonResponse =
-        findById(id).toResponse()
+        findPerson(id).toResponse()
 
     @Transactional
     fun create(request: PersonUpsertRequest): PersonResponse {
@@ -51,7 +51,7 @@ class PersonService(
 
     @Transactional
     fun update(id: Int, request: PersonUpsertRequest): PersonResponse =
-        findById(id).apply {
+        findPerson(id).apply {
             name = requireNotNull(request.name)
             eyeColor = request.eyeColor
             hairColor = requireNotNull(request.hairColor)
@@ -62,7 +62,7 @@ class PersonService(
 
     @Transactional
     fun delete(id: Int) {
-        findById(id)
+        findPerson(id)
 
         if (
             movieRepository.existsByDirectorId(id) ||
@@ -79,7 +79,7 @@ class PersonService(
 
 
 
-    private fun findById(id: Int): Person =
+    private fun findPerson(id: Int): Person =
         personRepository.findById(id).orElseThrow {
             throw NoSuchElementException("человек с id=$id НЕ найден...")
         }
