@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController
 class LocationController(
     private val locationService: LocationService
 ) {
-
     @GetMapping
     fun getPage(
         @PageableDefault(page = 0, size = 10, sort = ["id"])

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/persons")
+@RequestMapping("/api/person")
 class PersonController(
     private val personService: PersonService,
 ) {

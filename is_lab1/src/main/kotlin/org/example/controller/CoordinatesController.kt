@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController
 class CoordinatesController(
     private val coordinatesService: CoordinatesService
 ) {
-
     @GetMapping
     fun getPage(
         @PageableDefault(page = 0, size = 20, sort = ["id"])
