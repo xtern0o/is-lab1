@@ -60,7 +60,7 @@ public enum Country {
     INDIA,
     VATICAN,
     SOUTH_KOREA,
-    NORTH_KOREA;
+    NORTH_KOREA
 }
 ```
 
