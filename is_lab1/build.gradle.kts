@@ -3,17 +3,20 @@ plugins {
     kotlin("plugin.spring") version "2.3.0"
     kotlin("plugin.jpa") version "2.3.0"
     kotlin("plugin.allopen") version "2.3.0"
+
     war
 }
 
 group = "org.example"
-version = "1.0-SNAPSHOT"
+version = "1.0"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
+    implementation(kotlin("reflect"))
+
     implementation(platform("org.springframework:spring-framework-bom:6.2.19"))
     implementation("org.springframework:spring-webmvc")
     implementation("org.springframework:spring-orm")
@@ -32,7 +35,7 @@ allOpen {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(17)
 }
 
 tasks.test {

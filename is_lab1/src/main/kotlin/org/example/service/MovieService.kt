@@ -4,6 +4,7 @@ import org.example.dto.movie.request.AwardOscarsByLengthRequest
 import org.example.dto.movie.request.MovieUpsertRequest
 import org.example.dto.movie.response.AwardOscarsResponse
 import org.example.dto.movie.response.MovieResponse
+import org.example.dto.movie.response.OscarsCountGroupResponse
 import org.example.entity.Coordinates
 import org.example.entity.Movie
 import org.example.entity.Person
@@ -124,6 +125,16 @@ class MovieService(
 
         return AwardOscarsResponse(updatedMoviesCount = updatedCount)
     }
+
+    @Transactional(readOnly = true)
+    fun countGroupedByOscars(): List<OscarsCountGroupResponse> =
+        movieRepository.countGroupedByOscars().map {
+            OscarsCountGroupResponse(
+                oscarsCount = it.oscarsCount,
+                movieCount = it.movieCount,
+            )
+        }
+
 
     private fun findMovieDetailed(id: Int): Movie =
         movieRepository.findDetailedById(id)

@@ -5,6 +5,7 @@ import org.example.dto.movie.request.AwardOscarsByLengthRequest
 import org.example.dto.movie.response.MovieResponse
 import org.example.dto.movie.request.MovieUpsertRequest
 import org.example.dto.movie.response.AwardOscarsResponse
+import org.example.dto.movie.response.OscarsCountGroupResponse
 import org.example.service.MovieService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -86,5 +87,10 @@ class MovieController(
         @RequestBody request: AwardOscarsByLengthRequest,
     ): AwardOscarsResponse =
         movieService.awardOscars(request)
+
+    @GetMapping("/stats/by-oscars-count")
+    fun countGroupedByOscars(): List<OscarsCountGroupResponse> =
+        movieService.countGroupedByOscars()
+
 
 }

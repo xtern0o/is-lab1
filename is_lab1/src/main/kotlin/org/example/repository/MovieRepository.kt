@@ -1,6 +1,7 @@
 package org.example.repository
 
 import org.example.entity.Movie
+import org.example.repository.projection.OscarsCountGroup
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.EntityGraph
@@ -56,4 +57,12 @@ interface MovieRepository : JpaRepository<Movie, Int> {
         @Param("length") length: Long,
         @Param("anountOfOscars") amountOfOscars: Int
     ): Int
+
+    @Query("""
+        select m.oscarsCount as oscarsCount, count(m) as movieCount
+        from Movie m
+        group by m.oscarsCount
+        order by m.oscarsCount
+    """)
+    fun countGroupedByOscars(): List<OscarsCountGroup>
 }
