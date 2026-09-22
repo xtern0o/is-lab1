@@ -1,11 +1,12 @@
 plugins {
+    id("org.springframework.boot") version "4.1.1"
+
     kotlin("jvm") version "2.3.0"
     kotlin("plugin.spring") version "2.3.0"
     kotlin("plugin.jpa") version "2.3.0"
     kotlin("plugin.allopen") version "2.3.0"
-
-    war
 }
+
 
 group = "org.example"
 version = "1.0"
@@ -15,20 +16,22 @@ repositories {
 }
 
 dependencies {
+    implementation(platform("org.springframework.boot:spring-boot-dependencies:4.1.1"))
+
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
     implementation(kotlin("reflect"))
+    runtimeOnly("org.postgresql:postgresql")
 
-    implementation(platform("org.springframework:spring-framework-bom:6.2.19"))
-    implementation("org.springframework:spring-webmvc")
-    implementation("org.springframework:spring-orm")
-    implementation("org.springframework:spring-tx")
-
-    implementation("org.springframework.data:spring-data-jpa:3.4.7")
-    implementation("org.hibernate.orm:hibernate-core:7.4.7.Final")
-    runtimeOnly("org.postgresql:postgresql:42.7.13")
-    implementation("org.hibernate.validator:hibernate-validator:8.0.2.Final")
-
-    testImplementation(kotlin("test"))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
+
+allOpen {
+    annotation("jakarta.persistence.Entity")
+}
+
 
 allOpen {
     annotation("jakarta.persistence.Entity")
