@@ -42,3 +42,5 @@ bin/
 .DS_Store
 
 is_lab1/.env
+
+.env
