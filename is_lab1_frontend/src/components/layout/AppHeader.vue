@@ -1,0 +1,112 @@
+<script setup lang="ts">
+import moneySeparator from '@/assets/img/money-18548_256.gif'
+</script>
+
+<template>
+  <header class="masthead">
+    <div class="identity-bar">
+      <p class="identity">Карнажицкий М. Р.</p>
+      <div class="money-separator" aria-hidden="true">
+        <img :src="moneySeparator" alt="" />
+      </div>
+      <div class="brand-lockup"><strong>is_lab1</strong></div>
+      <div class="money-separator" aria-hidden="true">
+        <img :src="moneySeparator" alt="" />
+      </div>
+      <p class="variant">VARIANT<br /><strong>55995</strong></p>
+    </div>
+  </header>
+</template>
+
+<style scoped>
+.masthead {
+  background: var(--cream);
+}
+
+.identity-bar {
+  min-height: 108px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 13px 28px;
+  display: grid;
+  grid-template-columns: 1fr 58px 1.1fr 58px 1fr;
+  align-items: center;
+  gap: 22px;
+}
+
+.identity,
+.variant {
+  margin: 0;
+  font:
+    700 13px/1.35 'Courier New',
+    monospace;
+  text-transform: uppercase;
+}
+
+.variant {
+  text-align: right;
+}
+
+.variant strong {
+  color: var(--brick);
+  font-size: 20px;
+}
+
+.brand-lockup {
+  text-align: center;
+}
+
+.brand-lockup strong {
+  display: block;
+  font:
+    900 36px/0.95 Georgia,
+    serif;
+  letter-spacing: -0.045em;
+  text-shadow: 2px 2px 0 var(--yellow);
+}
+
+.money-separator {
+  width: 54px;
+  height: 54px;
+}
+
+.money-separator img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 760px) {
+  .identity-bar {
+    min-height: auto;
+    padding: 14px;
+    grid-template-columns: 1fr 44px 1fr;
+    gap: 10px;
+  }
+
+  .brand-lockup {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .brand-lockup strong {
+    font-size: 30px;
+  }
+
+  .identity,
+  .variant {
+    grid-row: 2;
+    font-size: 10px;
+  }
+
+  .money-separator {
+    grid-row: 2;
+    width: 42px;
+    height: 42px;
+  }
+
+  .money-separator:nth-of-type(3) {
+    display: none;
+  }
+}
+</style>
