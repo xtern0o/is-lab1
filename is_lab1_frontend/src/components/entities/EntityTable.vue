@@ -24,12 +24,12 @@ const tableWidth = computed(() => `${Math.max(780, props.columns.length * 125)}p
       </thead>
       <tbody>
         <tr v-for="row in rows" :key="row.id">
-          <td v-for="column in columns" :key="column.key">{{ row[column.key] || '—' }}</td>
+          <td v-for="column in columns" :key="column.key">{{ row[column.key] || '--' }}</td>
           <td class="action-cell">
             <button
               class="row-action"
               type="button"
-              aria-label="Open record"
+              aria-label="open record"
               @click="emit('open', row.id)"
             >
               <img :src="danger" alt="" />
@@ -102,11 +102,11 @@ tbody tr:hover {
   border: 0;
   background: transparent;
   cursor: pointer;
-  transition: transform 120ms ease;
+  transition: transform 200ms ease;
 }
 
 .row-action:hover {
-  transform: rotate(-5deg) scale(1.12);
+  transform: rotate(-10deg) scale(1.5);
 }
 
 .row-action img {

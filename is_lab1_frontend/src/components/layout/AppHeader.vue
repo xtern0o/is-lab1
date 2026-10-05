@@ -24,14 +24,14 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
 }
 
 .identity-bar {
-  min-height: 108px;
+  min-height: 88px;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 13px 28px;
+  padding: 8px 28px;
   display: grid;
-  grid-template-columns: 1fr 58px 1.1fr 58px 1fr;
+  grid-template-columns: 1fr 48px 1.1fr 48px 1fr;
   align-items: center;
-  gap: 22px;
+  gap: 18px;
 }
 
 .identity,
@@ -49,7 +49,7 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
 
 .variant strong {
   color: var(--brick);
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .brand-lockup {
@@ -59,15 +59,15 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
 .brand-lockup strong {
   display: block;
   font:
-    900 36px/0.95 Georgia,
+    900 32px/0.95 Georgia,
     serif;
   letter-spacing: -0.045em;
   text-shadow: 2px 2px 0 var(--yellow);
 }
 
 .money-separator {
-  width: 54px;
-  height: 54px;
+  width: 46px;
+  height: 46px;
 }
 
 .money-separator img {
@@ -79,8 +79,8 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
 @media (max-width: 760px) {
   .identity-bar {
     min-height: auto;
-    padding: 14px;
-    grid-template-columns: 1fr 44px 1fr;
+    padding: 10px 14px;
+    grid-template-columns: 1fr 40px 1fr;
     gap: 10px;
   }
 
@@ -101,8 +101,8 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
 
   .money-separator {
     grid-row: 2;
-    width: 42px;
-    height: 42px;
+    width: 38px;
+    height: 38px;
   }
 
   .money-separator:nth-of-type(3) {

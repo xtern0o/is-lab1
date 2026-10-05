@@ -2,11 +2,13 @@
 import { computed, ref, watch } from 'vue'
 
 import { ENTITY_DEFINITIONS } from '@/domain/entitySchemas'
+import { showError } from '@/shared/errors'
 import type {
   ColumnDefinition,
   DataTabId,
   EntityCollections,
   EntityRecord,
+  RecordCreation,
   RecordMutation,
 } from '@/domain/types'
 import RecordFieldEditor from './RecordFieldEditor.vue'
@@ -26,13 +28,15 @@ interface RecordSnapshot {
 const props = defineProps<{
   entityType: DataTabId
   recordId: string
+  mode: 'edit' | 'create'
   collections: EntityCollections
 }>()
 
 const emit = defineEmits<{
   close: []
-  save: [mutation: RecordMutation]
-  delete: [entityType: DataTabId, id: string]
+  save: [mutation: RecordMutation, onSaved: () => void]
+  create: [creation: RecordCreation]
+  delete: [entityType: DataTabId, id: string, onDeleted: () => void]
 }>()
 
 const currentEntityType = ref<DataTabId>(props.entityType)
@@ -40,15 +44,20 @@ const currentId = ref(props.recordId)
 const fields = ref<DraftField[]>([])
 const originalValues = ref<string[]>([])
 const history = ref<RecordSnapshot[]>([])
-const error = ref('')
 
 const definition = computed(() => ENTITY_DEFINITIONS[currentEntityType.value])
+const isCreatingRoot = computed(() => props.mode === 'create' && history.value.length === 0)
 const hasChanges = computed(() =>
   fields.value.some((field, index) => field.value !== originalValues.value[index]),
 )
 
+function normalizeId(id: string) {
+  return /^\d+$/.test(id) ? id.replace(/^0+(?=\d)/, '') : id
+}
+
 function findRecord(entityType: DataTabId, id: string) {
-  return props.collections[entityType].find((record) => record.id === id)
+  const normalizedId = normalizeId(id)
+  return props.collections[entityType].find((record) => normalizeId(record.id) === normalizedId)
 }
 
 function loadRecord(entityType: DataTabId, record: EntityRecord) {
@@ -59,11 +68,23 @@ function loadRecord(entityType: DataTabId, record: EntityRecord) {
     value: record[column.key] ?? '',
   }))
   originalValues.value = fields.value.map((field) => field.value)
-  error.value = ''
+}
+
+function loadNewRecord(entityType: DataTabId) {
+  currentEntityType.value = entityType
+  currentId.value = ''
+  fields.value = ENTITY_DEFINITIONS[entityType].columns
+    .filter((column) => !column.readonly)
+    .map((column) => ({ column, value: '' }))
+  originalValues.value = fields.value.map(() => '')
 }
 
 function loadInitialRecord() {
   history.value = []
+  if (props.mode === 'create') {
+    loadNewRecord(props.entityType)
+    return
+  }
   const record = findRecord(props.entityType, props.recordId)
   if (record) loadRecord(props.entityType, record)
 }
@@ -74,10 +95,11 @@ function openRelation(field: DraftField) {
 
   const relatedRecord = findRecord(target, field.value)
   if (!relatedRecord) {
-    error.value = `Record #${field.value} was not found`
+    showError('Связанный объект не найден', 'Запись с ID ' + field.value + ' отсутствует')
     return
   }
 
+  field.value = relatedRecord.id
   history.value.push({
     entityType: currentEntityType.value,
     id: currentId.value,
@@ -95,24 +117,37 @@ function goBack() {
   currentId.value = previous.id
   fields.value = previous.fields.map((field) => ({ ...field }))
   originalValues.value = [...previous.originalValues]
-  error.value = ''
 }
 
 function save() {
   const record = fields.value.reduce<EntityRecord>(
     (result, field) => {
-      result[field.column.key] = field.value
+      const relatedRecord = field.column.relation
+        ? findRecord(field.column.relation, field.value)
+        : undefined
+      result[field.column.key] = relatedRecord?.id ?? field.value
       return result
     },
     { id: currentId.value },
   )
 
-  emit('save', {
-    entityType: currentEntityType.value,
-    id: currentId.value,
-    record,
-  })
-  originalValues.value = fields.value.map((field) => field.value)
+  if (isCreatingRoot.value) {
+    emit('create', { entityType: currentEntityType.value, record })
+    return
+  }
+
+  const savedValues = fields.value.map((field) => field.value)
+  emit(
+    'save',
+    {
+      entityType: currentEntityType.value,
+      id: currentId.value,
+      record,
+    },
+    () => {
+      originalValues.value = savedValues
+    },
+  )
 }
 
 function discardChanges() {
@@ -126,12 +161,15 @@ function deleteRecord() {
     return
   }
 
-  emit('delete', currentEntityType.value, currentId.value)
-  if (history.value.length > 0) goBack()
-  else emit('close')
+  emit('delete', currentEntityType.value, currentId.value, () => {
+    if (history.value.length > 0) goBack()
+    else emit('close')
+  })
 }
 
-watch(() => [props.entityType, props.recordId] as const, loadInitialRecord, { immediate: true })
+watch(() => [props.mode, props.entityType, props.recordId] as const, loadInitialRecord, {
+  immediate: true,
+})
 </script>
 
 <template>
@@ -140,7 +178,7 @@ watch(() => [props.entityType, props.recordId] as const, loadInitialRecord, { im
       class="record-dialog"
       role="dialog"
       aria-modal="true"
-      :aria-labelledby="`record-title-${currentId}`"
+      :aria-labelledby="`record-title-${currentId || 'new'}`"
     >
       <header class="dialog-header">
         <div>
@@ -152,16 +190,15 @@ watch(() => [props.entityType, props.recordId] as const, loadInitialRecord, { im
           >
             ← back
           </button>
-          <h2 :id="`record-title-${currentId}`">
-            {{ definition.typeName }} RECORD // ID {{ currentId }}
+          <h2 :id="`record-title-${currentId || 'new'}`">
+            <template v-if="isCreatingRoot">NEW {{ definition.typeName }} RECORD</template>
+            <template v-else>{{ definition.typeName }} RECORD // ID {{ currentId }}</template>
           </h2>
         </div>
         <span v-if="hasChanges">UNSAVED CHANGES</span>
       </header>
 
       <form class="record-form" @submit.prevent="save">
-        <p v-if="error" class="record-error">{{ error }}</p>
-
         <div class="record-fields">
           <RecordFieldEditor
             v-for="(field, index) in fields"
@@ -174,11 +211,18 @@ watch(() => [props.entityType, props.recordId] as const, loadInitialRecord, { im
         </div>
 
         <div class="record-actions">
-          <button class="xp-button xp-button--danger" type="button" @click="deleteRecord">
+          <button
+            v-if="!isCreatingRoot"
+            class="xp-button xp-button--danger"
+            type="button"
+            @click="deleteRecord"
+          >
             Delete
           </button>
           <div>
-            <button class="xp-button" type="submit" :disabled="!hasChanges">Save</button>
+            <button class="xp-button" type="submit" :disabled="!hasChanges">
+              {{ isCreatingRoot ? 'Create' : 'Save' }}
+            </button>
             <button class="xp-button" type="button" :disabled="!hasChanges" @click="discardChanges">
               Discard changes
             </button>
@@ -249,16 +293,6 @@ watch(() => [props.entityType, props.recordId] as const, loadInitialRecord, { im
 
 .record-form {
   padding: 20px;
-}
-
-.record-error {
-  margin: 0 0 14px;
-  padding: 8px 10px;
-  color: #fff1ca;
-  background: var(--brick);
-  font:
-    700 10px/1.3 'Courier New',
-    monospace;
 }
 
 .record-fields {

@@ -1,21 +1,66 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
+import { apiDelete, apiGet, apiPost, apiPut } from '@/config/api'
 import { ENTITY_DEFINITIONS } from '@/domain/entitySchemas'
-import { createMockCollections } from '@/domain/mockData'
-import type { DataTabId, EntityRecord, RecordMutation, TabId } from '@/domain/types'
+import type {
+  DataTabId,
+  EntityCollections,
+  EntityRecord,
+  RecordCreation,
+  RecordMutation,
+  TabId,
+} from '@/domain/types'
+import { showError } from '@/shared/errors'
 
 const PAGE_SIZE = 5
+const ENTITY_ENDPOINTS: Record<DataTabId, string> = {
+  movies: '/movies',
+  persons: '/person',
+  locations: '/location',
+  coordinates: '/coordinates',
+}
+
+interface ApiPage {
+  content: Array<Record<string, unknown>>
+  totalPages: number
+  totalElements: number
+}
+
+const NUMBER_FIELDS = new Set([
+  'x',
+  'y',
+  'z',
+  'coordinatesId',
+  'oscarsCount',
+  'budget',
+  'totalBoxOffice',
+  'directorId',
+  'screenwriterId',
+  'operatorId',
+  'length',
+  'goldenPalmCount',
+  'locationId',
+  'height',
+])
 
 export const useDatabaseStore = defineStore('database', () => {
-  const collections = reactive(createMockCollections())
+  const collections = reactive<EntityCollections>({
+    movies: [],
+    persons: [],
+    locations: [],
+    coordinates: [],
+  })
   const activeTab = ref<TabId>('movies')
   const query = ref('')
   const databaseQuery = ref<string | null>(null)
   const currentPage = ref(0)
   const sortDescending = ref(false)
+  const pageCount = ref(1)
+  const totalElements = ref(0)
   const selectedEntityType = ref<DataTabId | null>(null)
   const selectedRecordId = ref('')
+  const isCreating = ref(false)
 
   const activeEntityType = computed<DataTabId>(() =>
     activeTab.value === 'operations' ? 'movies' : activeTab.value,
@@ -24,11 +69,11 @@ export const useDatabaseStore = defineStore('database', () => {
   const activeRecords = computed(() => collections[activeEntityType.value])
   const isOperations = computed(() => activeTab.value === 'operations')
   const windowTitle = computed(() =>
-    isOperations.value ? 'SPECIAL OPERATIONS' : activeDefinition.value.title,
+    isOperations.value ? 'SPECIAL OPERATIONS' : activeDefinition.value.typeName,
   )
   const windowStatus = computed(() => {
     if (isOperations.value) return '05 actions available'
-    const count = String(activeRecords.value.length).padStart(2, '0')
+    const count = String(totalElements.value).padStart(2, '0')
     return `${count} ${activeDefinition.value.statusNoun} online`
   })
 
@@ -44,16 +89,11 @@ export const useDatabaseStore = defineStore('database', () => {
       ? activeRecords.value.filter((record) => matchesSearch(record, search))
       : activeRecords.value
   })
-  const pageCount = computed(() => Math.max(1, Math.ceil(databaseRows.value.length / PAGE_SIZE)))
-  const currentRows = computed(() => {
-    const start = currentPage.value * PAGE_SIZE
-    return databaseRows.value.slice(start, start + PAGE_SIZE)
-  })
   const visibleRows = computed(() => {
     const search = query.value.trim().toLowerCase()
     return !search || search === databaseQuery.value?.toLowerCase()
-      ? currentRows.value
-      : currentRows.value.filter((record) => matchesSearch(record, search))
+      ? databaseRows.value
+      : databaseRows.value.filter((record) => matchesSearch(record, search))
   })
 
   function clearSearch() {
@@ -80,37 +120,137 @@ export const useDatabaseStore = defineStore('database', () => {
 
   function toggleSort() {
     sortDescending.value = !sortDescending.value
-    const direction = sortDescending.value ? -1 : 1
-    activeRecords.value.sort((left, right) => left.id.localeCompare(right.id) * direction)
     currentPage.value = 0
   }
 
+  function toEntityRecord(source: Record<string, unknown>): EntityRecord {
+    return Object.fromEntries(
+      Object.entries(source).map(([key, value]) => {
+        let text = value == null ? '' : String(value)
+        if (key === 'creationDate') text = text.slice(0, 10)
+        if (text && (key === 'id' || key.endsWith('Id'))) text = text.padStart(3, '0')
+        return [key, text]
+      }),
+    ) as EntityRecord
+  }
+
+  function toRequest(record: EntityRecord) {
+    return Object.fromEntries(
+      Object.entries(record)
+        .filter(([key]) => key !== 'id' && key !== 'creationDate')
+        .map(([key, value]) => [
+          key,
+          value === '' ? null : NUMBER_FIELDS.has(key) ? Number(value) : value,
+        ]),
+    )
+  }
+
+  let lastRequestId = 0
+
+  async function loadPage() {
+    const requestId = ++lastRequestId
+    if (isOperations.value) return
+
+    const entityType = activeEntityType.value
+    const direction = sortDescending.value ? 'desc' : 'asc'
+
+    try {
+      const response: ApiPage = await apiGet(
+        `${ENTITY_ENDPOINTS[entityType]}?page=${currentPage.value}&size=${PAGE_SIZE}&sort=id,${direction}`,
+      )
+
+      // проверка если пользователь решил свичнуться на другой таб
+      // чтобы инвалидировать прошлый запрос и выполнить последний
+      if (requestId !== lastRequestId) return
+
+      const totalPages = Math.max(1, response.totalPages)
+      if (currentPage.value >= totalPages) {
+        pageCount.value = totalPages
+        currentPage.value = totalPages - 1
+        return
+      }
+
+      collections[entityType] = response.content.map(toEntityRecord)
+      pageCount.value = totalPages
+      totalElements.value = response.totalElements
+    } catch (error) {
+      if (requestId !== lastRequestId) return
+
+      collections[entityType] = []
+      pageCount.value = 1
+      totalElements.value = 0
+
+      showError(
+        'не удалось загрузить страницуу :((',
+        error instanceof Error ? error.message : 'нам не сообщили что за ошибка',
+      )
+    }
+  }
+
   function openRecord(id: string) {
+    isCreating.value = false
     selectedEntityType.value = activeEntityType.value
     selectedRecordId.value = id
   }
 
+  function startCreateRecord() {
+    isCreating.value = true
+    selectedEntityType.value = activeEntityType.value
+    selectedRecordId.value = ''
+  }
+
   function closeRecord() {
+    isCreating.value = false
     selectedEntityType.value = null
     selectedRecordId.value = ''
   }
 
-  function saveRecord({ entityType, id, record }: RecordMutation) {
-    const current = collections[entityType].find((item) => item.id === id)
-    if (current) Object.assign(current, record)
+  async function saveRecord({ entityType, id, record }: RecordMutation, onSaved: () => void) {
+    try {
+      await apiPut(`${ENTITY_ENDPOINTS[entityType]}/${Number(id)}`, toRequest(record))
+
+      onSaved()
+      await loadPage()
+    } catch (error) {
+      showError(
+        'не удалось обновить запись :((',
+        error instanceof Error ? error.message : 'нам не сообщили что за ошибка',
+      )
+    }
   }
 
-  function deleteRecord(entityType: DataTabId, id: string) {
-    const records = collections[entityType]
-    const index = records.findIndex((record) => record.id === id)
-    if (index >= 0) records.splice(index, 1)
-    currentPage.value = Math.min(currentPage.value, pageCount.value - 1)
+  async function createRecord({ entityType, record }: RecordCreation) {
+    try {
+      await apiPost(ENTITY_ENDPOINTS[entityType], toRequest(record))
+      closeRecord()
+      await loadPage()
+    } catch (error) {
+      showError(
+        'не удалось создать запись :((',
+        error instanceof Error ? error.message : 'нам не сообщили что за ошибка',
+      )
+    }
+  }
+
+  async function deleteRecord(entityType: DataTabId, id: string, onDeleted: () => void) {
+    try {
+      await apiDelete(`${ENTITY_ENDPOINTS[entityType]}/${Number(id)}`)
+      onDeleted()
+      await loadPage()
+    } catch (error) {
+      showError(
+        'не удалось удалить запись :((',
+        error instanceof Error ? error.message : 'нам не сообщили что за ошибка',
+      )
+    }
   }
 
   watch(activeTab, () => {
     clearSearch()
     sortDescending.value = false
   })
+
+  watch([activeTab, currentPage, sortDescending], () => void loadPage(), { immediate: true })
 
   return {
     collections,
@@ -121,6 +261,7 @@ export const useDatabaseStore = defineStore('database', () => {
     sortDescending,
     selectedEntityType,
     selectedRecordId,
+    isCreating,
     activeDefinition,
     isOperations,
     windowTitle,
@@ -133,9 +274,12 @@ export const useDatabaseStore = defineStore('database', () => {
     clearSearch,
     changePage,
     toggleSort,
+    loadPage,
     openRecord,
+    startCreateRecord,
     closeRecord,
     saveRecord,
+    createRecord,
     deleteRecord,
   }
 })

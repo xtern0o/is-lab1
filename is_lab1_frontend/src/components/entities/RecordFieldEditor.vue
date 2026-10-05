@@ -23,7 +23,7 @@ function updateValue(event: Event) {
     <div class="field-control">
       <select v-if="column.options" :id="fieldId" :value="modelValue" @change="updateValue">
         <option v-for="option in column.options" :key="option" :value="option">
-          {{ option || '--- not selected ---' }}
+          {{ option || '--- вы не выбрали(( ---' }}
         </option>
       </select>
       <input
@@ -41,7 +41,7 @@ function updateValue(event: Event) {
         title="Open related record"
         @click="emit('openRelation')"
       >
-        open →
+        open
       </button>
     </div>
   </div>

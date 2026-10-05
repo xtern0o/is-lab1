@@ -74,7 +74,7 @@ class MovieController(
 
     @GetMapping("/golden-palm-count-less-than/{goldenPalmCount}")
     fun getByGoldenPalmCountLessThan(
-        @RequestParam goldenPalmCount: Long,
+        @PathVariable goldenPalmCount: Long,
     ): List<MovieResponse> =
         movieService.findByGoldenPalmCountLessThan(goldenPalmCount)
 

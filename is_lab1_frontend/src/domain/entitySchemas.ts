@@ -1,21 +1,12 @@
-import type { EntityDefinitions, TabId } from './types'
+import type { EntityDefinitions } from './types'
 
 const COLORS = ['', 'GREEN', 'BLACK', 'YELLOW', 'ORANGE'] as const
 const COUNTRIES = ['', 'FRANCE', 'INDIA', 'VATICAN', 'SOUTH_KOREA', 'NORTH_KOREA'] as const
 const RATINGS = ['', 'PG_13', 'R', 'NC_17'] as const
 const GENRES = ['', 'WESTERN', 'TRAGEDY', 'THRILLER', 'HORROR', 'FANTASY'] as const
 
-export const ENTITY_TABS: ReadonlyArray<{ id: TabId; label: string }> = [
-  { id: 'movies', label: 'Movies' },
-  { id: 'persons', label: 'Persons' },
-  { id: 'locations', label: 'Locations' },
-  { id: 'coordinates', label: 'Coordinates' },
-  { id: 'operations', label: 'Special ops' },
-]
-
 export const ENTITY_DEFINITIONS: EntityDefinitions = {
   movies: {
-    title: 'MOVIE DATABASE',
     typeName: 'MOVIE',
     statusNoun: 'records',
     searchableKeys: ['name'],
@@ -37,7 +28,6 @@ export const ENTITY_DEFINITIONS: EntityDefinitions = {
     ],
   },
   persons: {
-    title: 'PERSON DIRECTORY',
     typeName: 'PERSON',
     statusNoun: 'people',
     searchableKeys: ['name'],
@@ -52,7 +42,6 @@ export const ENTITY_DEFINITIONS: EntityDefinitions = {
     ],
   },
   locations: {
-    title: 'LOCATION INDEX',
     typeName: 'LOCATION',
     statusNoun: 'locations',
     searchableKeys: ['name'],
@@ -65,7 +54,6 @@ export const ENTITY_DEFINITIONS: EntityDefinitions = {
     ],
   },
   coordinates: {
-    title: 'COORDINATE REGISTER',
     typeName: 'COORDINATES',
     statusNoun: 'points',
     searchableKeys: [],

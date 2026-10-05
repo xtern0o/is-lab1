@@ -15,7 +15,6 @@ export interface ColumnDefinition {
 }
 
 export interface EntityDefinition {
-  title: string
   typeName: string
   statusNoun: string
   searchableKeys: readonly string[]
@@ -28,5 +27,10 @@ export type EntityCollections = Record<DataTabId, EntityRecord[]>
 export interface RecordMutation {
   entityType: DataTabId
   id: string
+  record: EntityRecord
+}
+
+export interface RecordCreation {
+  entityType: DataTabId
   record: EntityRecord
 }

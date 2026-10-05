@@ -11,7 +11,7 @@ import eagle from '@/assets/img/eagle-15084_256.gif'
       <span><img :src="eagle" alt="" /></span>
       <span><img :src="americanRun" alt="" /></span>
     </div>
-    <div class="footer-copy"><strong>is_lab1 © 2026</strong></div>
+    <div class="footer-copy"><strong>@maxkarn (c) 2026</strong></div>
     <div class="footer-icons" aria-hidden="true">
       <span><img :src="americanRun" alt="" /></span>
       <span><img :src="eagle" alt="" /></span>
