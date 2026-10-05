@@ -13,10 +13,6 @@ class AuthService(
     private val userService: UserService
 ) {
     fun register(userRegisterRequest: UserRegisterRequest): TokenResponse {
-        if (userRegisterRequest.password != userRegisterRequest.repeatedPassword) {
-            throw IllegalArgumentException("пароли не совпадают(")
-        }
-
         val user = userService.create(userRegisterRequest)
         return createTokens(user)
     }

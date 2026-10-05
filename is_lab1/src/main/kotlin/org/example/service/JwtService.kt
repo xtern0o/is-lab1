@@ -1,6 +1,7 @@
 package org.example.service
 
 import org.example.dto.auth.response.UserResponse
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm
 import org.springframework.security.oauth2.jwt.JwsHeader
@@ -16,12 +17,14 @@ import java.util.UUID
 @Service
 class JwtService(
     private val jwtEncoder: JwtEncoder,
-    private val jwtDecoder: JwtDecoder,
 
-    @Value("\${jwt.access-ttl-seconds}")
+    @param:Qualifier("refreshJwtDecoder")
+    private val refreshDecoder: JwtDecoder,
+
+    @param:Value("\${jwt.access-ttl-seconds}")
     private val accessTtl: Long,
 
-    @Value("\${jwt.refresh-ttl-seconds}")
+    @param:Value("\${jwt.refresh-ttl-seconds}")
     private val refreshTtl: Long,
 ) {
 
@@ -33,7 +36,7 @@ class JwtService(
 
     fun getUserIdFromRefreshToken(token: String): UUID {
         val jwt = try {
-            jwtDecoder.decode(token)
+            refreshDecoder.decode(token)
         } catch (_: JwtException) {
             throw IllegalArgumentException("невалидный refresh-токен")
         }
