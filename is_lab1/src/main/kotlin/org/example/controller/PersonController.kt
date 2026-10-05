@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import org.example.dto.person.request.PersonUpsertRequest
 import org.example.dto.person.response.PersonResponse
 import org.example.repository.PersonRepository
+import org.example.service.DatabaseEventsService
 import org.example.service.PersonService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/person")
 class PersonController(
     private val personService: PersonService,
+    private val eventsService: DatabaseEventsService,
 ) {
     @GetMapping
     fun getPage(
@@ -42,23 +44,32 @@ class PersonController(
     @PostMapping
     fun create(
         @Valid @RequestBody request: PersonUpsertRequest,
-    ): ResponseEntity<PersonResponse> =
-        ResponseEntity
+    ): ResponseEntity<PersonResponse> {
+        val person = personService.create(request)
+        eventsService.publish("persons")
+
+        return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(personService.create(request))
+            .body(person)
+    }
 
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: Int,
         @Valid @RequestBody request: PersonUpsertRequest,
-    ): PersonResponse =
-        personService.update(id, request)
+    ): PersonResponse {
+        val person = personService.update(id, request)
+        eventsService.publish("persons")
+
+        return person
+    }
 
     @DeleteMapping("/{id}")
     fun delete(
         @PathVariable id: Int,
     ): ResponseEntity<Void> {
         personService.delete(id)
+        eventsService.publish("persons")
 
         return ResponseEntity.noContent().build()
     }

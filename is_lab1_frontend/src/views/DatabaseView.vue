@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
+import { onMounted, onUnmounted } from 'vue'
 
 import EntityTable from '@/components/entities/EntityTable.vue'
 import RecordDialog from '@/components/entities/RecordDialog.vue'
@@ -41,7 +42,14 @@ const {
   saveRecord,
   createRecord,
   deleteRecord,
+  startUpdates,
+  stopUpdates,
 } = store
+
+// ЖЦ SSE
+onMounted(startUpdates)
+onUnmounted(stopUpdates)
+
 </script>
 
 <template>

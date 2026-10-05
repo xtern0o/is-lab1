@@ -5,6 +5,8 @@ const COUNTRIES = ['', 'FRANCE', 'INDIA', 'VATICAN', 'SOUTH_KOREA', 'NORTH_KOREA
 const RATINGS = ['', 'PG_13', 'R', 'NC_17'] as const
 const GENRES = ['', 'WESTERN', 'TRAGEDY', 'THRILLER', 'HORROR', 'FANTASY'] as const
 
+// AI generated definitions: я проверил все верно
+
 export const ENTITY_DEFINITIONS: EntityDefinitions = {
   movies: {
     typeName: 'MOVIE',

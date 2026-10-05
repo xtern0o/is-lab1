@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import org.example.dto.coordinates.request.CoordinatesUpsertRequest
 import org.example.dto.coordinates.response.CoordinatesResponse
 import org.example.service.CoordinatesService
+import org.example.service.DatabaseEventsService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
@@ -22,7 +23,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/coordinates")
 class CoordinatesController(
-    private val coordinatesService: CoordinatesService
+    private val coordinatesService: CoordinatesService,
+    private val eventsService: DatabaseEventsService,
 ) {
     @GetMapping
     fun getPage(
@@ -40,23 +42,32 @@ class CoordinatesController(
     @PostMapping
     fun create(
         @Valid @RequestBody request: CoordinatesUpsertRequest,
-    ): ResponseEntity<CoordinatesResponse> =
-        ResponseEntity
+    ): ResponseEntity<CoordinatesResponse> {
+        val coordinates = coordinatesService.create(request)
+        eventsService.publish("coordinates")
+
+        return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(coordinatesService.create(request))
+            .body(coordinates)
+    }
 
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: Int,
         @Valid @RequestBody request: CoordinatesUpsertRequest,
-    ): CoordinatesResponse =
-        coordinatesService.update(id, request)
+    ): CoordinatesResponse {
+        val coordinates = coordinatesService.update(id, request)
+        eventsService.publish("coordinates")
+
+        return coordinates
+    }
 
     @DeleteMapping("/{id}")
     fun delete(
         @PathVariable id: Int,
     ): ResponseEntity<Void> {
         coordinatesService.delete(id)
+        eventsService.publish("coordinates")
 
         return ResponseEntity.noContent().build() // 204
     }

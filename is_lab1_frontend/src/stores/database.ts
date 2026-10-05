@@ -2,6 +2,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 import { apiDelete, apiGet, apiPost, apiPut } from '@/config/api'
+import { subscribeToUpdates } from '@/config/events'
 import { ENTITY_DEFINITIONS } from '@/domain/entitySchemas'
 import type {
   DataTabId,
@@ -146,6 +147,7 @@ export const useDatabaseStore = defineStore('database', () => {
   }
 
   let lastRequestId = 0
+  let unsubscribeUpdates: (() => void) | null = null
 
   async function loadPage() {
     const requestId = ++lastRequestId
@@ -185,6 +187,21 @@ export const useDatabaseStore = defineStore('database', () => {
         error instanceof Error ? error.message : 'нам не сообщили что за ошибка',
       )
     }
+  }
+
+  function startUpdates() {
+    if (unsubscribeUpdates) return
+
+    unsubscribeUpdates = subscribeToUpdates((entity) => {
+      if (!isOperations.value && entity === activeEntityType.value) {
+        void loadPage()
+      }
+    })
+  }
+
+  function stopUpdates() {
+    unsubscribeUpdates?.()
+    unsubscribeUpdates = null
   }
 
   function openRecord(id: string) {
@@ -275,6 +292,8 @@ export const useDatabaseStore = defineStore('database', () => {
     changePage,
     toggleSort,
     loadPage,
+    startUpdates,
+    stopUpdates,
     openRecord,
     startCreateRecord,
     closeRecord,

@@ -15,6 +15,32 @@ async function checkResponse(response: Response) {
   throw new Error(error.detail || error.message || `HTTP ${response.status}`)
 }
 
+export async function refreshAccessToken() {
+  const auth = useAuthStore()
+
+  if (!auth.refreshToken) {
+    auth.logout()
+    window.location.replace('/auth')
+    return false
+  }
+
+  const response = await fetch(API_BASE_URL + '/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: auth.refreshToken }),
+  })
+
+  if (!response.ok) {
+    auth.logout()
+    window.location.replace('/auth')
+    return false
+  }
+
+  const tokens = (await response.json()) as AuthTokens
+  auth.setTokens(tokens.accessToken, tokens.refreshToken)
+  return true
+}
+
 async function request(path: string, options: RequestInit = {}) {
   const auth = useAuthStore()
   const headers = new Headers(options.headers)
@@ -26,25 +52,9 @@ async function request(path: string, options: RequestInit = {}) {
   let response = await fetch(API_BASE_URL + path, { ...options, headers })
 
   if (response.status === 401 && !path.startsWith('/auth/')) {
-    if (auth.refreshToken) {
-      const refreshResponse = await fetch(API_BASE_URL + '/auth/refresh', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: auth.refreshToken }),
-      })
-
-      if (refreshResponse.ok) {
-        const tokens = (await refreshResponse.json()) as AuthTokens
-        auth.setTokens(tokens.accessToken, tokens.refreshToken)
-        headers.set('Authorization', `Bearer ${tokens.accessToken}`)
-        response = await fetch(API_BASE_URL + path, { ...options, headers })
-      } else {
-        auth.logout()
-        window.location.replace('/auth')
-      }
-    } else {
-      auth.logout()
-      window.location.replace('/auth')
+    if (await refreshAccessToken()) {
+      headers.set('Authorization', `Bearer ${auth.accessToken}`)
+      response = await fetch(API_BASE_URL + path, { ...options, headers })
     }
   }
 

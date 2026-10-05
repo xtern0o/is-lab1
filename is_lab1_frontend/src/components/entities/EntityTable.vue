@@ -106,7 +106,7 @@ tbody tr:hover {
 }
 
 .row-action:hover {
-  transform: rotate(-10deg) scale(1.5);
+  transform: rotate(-90deg) scale(1.25);
 }
 
 .row-action img {

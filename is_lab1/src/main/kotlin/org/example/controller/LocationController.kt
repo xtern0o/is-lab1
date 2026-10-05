@@ -4,6 +4,7 @@ import jakarta.validation.Valid
 import org.example.dto.location.request.LocationUpsertRequest
 import org.example.dto.location.response.LocationResponse
 import org.example.entity.Location
+import org.example.service.DatabaseEventsService
 import org.example.service.LocationService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -22,7 +23,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/location")
 class LocationController(
-    private val locationService: LocationService
+    private val locationService: LocationService,
+    private val eventsService: DatabaseEventsService,
 ) {
     @GetMapping
     fun getPage(
@@ -41,21 +43,30 @@ class LocationController(
     @PostMapping
     fun create(
         @Valid @RequestBody request: LocationUpsertRequest
-    ): ResponseEntity<LocationResponse> =
-        ResponseEntity.ok(locationService.create(request))
+    ): ResponseEntity<LocationResponse> {
+        val location = locationService.create(request)
+        eventsService.publish("locations")
+
+        return ResponseEntity.ok(location)
+    }
 
     @PutMapping("/{id}")
     fun update(
         @PathVariable id: Int,
         @Valid @RequestBody request: LocationUpsertRequest
-    ): ResponseEntity<LocationResponse> =
-        ResponseEntity.ok(locationService.update(id, request))
+    ): ResponseEntity<LocationResponse> {
+        val location = locationService.update(id, request)
+        eventsService.publish("locations")
+
+        return ResponseEntity.ok(location)
+    }
 
     @DeleteMapping("/{id}")
     fun delete(
         @PathVariable id: Int,
     ): ResponseEntity<Void> {
         locationService.delete(id)
+        eventsService.publish("locations")
 
         return ResponseEntity.noContent().build()
     }
