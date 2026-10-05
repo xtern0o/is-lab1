@@ -1,5 +1,16 @@
 <script setup lang="ts">
 import moneySeparator from '@/assets/img/money-18548_256.gif'
+import { RouterLink, useRouter } from 'vue-router'
+
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+const router = useRouter()
+
+function logout() {
+  auth.logout()
+  void router.replace('/auth')
+}
 </script>
 
 <template>
@@ -9,11 +20,20 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
       <div class="money-separator" aria-hidden="true">
         <img :src="moneySeparator" alt="" />
       </div>
-      <div class="brand-lockup"><strong>is_lab1</strong></div>
+      <RouterLink class="brand-lockup" to="/"><strong>is_lab1</strong></RouterLink>
       <div class="money-separator" aria-hidden="true">
         <img :src="moneySeparator" alt="" />
       </div>
-      <p class="variant">VARIANT<br /><strong>55995</strong></p>
+      <div class="account-block">
+        <div v-if="auth.isAuthenticated" class="account-user">
+          <strong class="account-name">{{ auth.username || 'authorized' }}</strong>
+          <button class="xp-button" type="button" @click="logout">выйти из аккаунта</button>
+        </div>
+        <button v-else class="xp-button" type="button" @click="router.push('/auth')">
+          войти в аккаунт
+        </button>
+        <p class="variant">VARIANT: <strong>55995</strong></p>
+      </div>
     </div>
   </header>
 </template>
@@ -49,11 +69,35 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
 
 .variant strong {
   color: var(--brick);
-  font-size: 18px;
+  font-size: 15px;
 }
 
-.brand-lockup {
+.account-block {
+  display: grid;
+  justify-items: end;
+  gap: 5px;
+}
+
+.account-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-name {
+  color: var(--brick);
+  font:
+    800 14px/1.2 'Courier New',
+    monospace;
+}
+
+.brand-lockup,
+.brand-lockup:visited,
+.brand-lockup:hover,
+.brand-lockup:active {
+  color: var(--ink);
   text-align: center;
+  text-decoration: none;
 }
 
 .brand-lockup strong {
@@ -94,7 +138,7 @@ import moneySeparator from '@/assets/img/money-18548_256.gif'
   }
 
   .identity,
-  .variant {
+  .account-block {
     grid-row: 2;
     font-size: 10px;
   }
