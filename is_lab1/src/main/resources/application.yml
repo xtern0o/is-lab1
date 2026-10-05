@@ -1,6 +1,11 @@
 server:
   port: 55080
 
+jwt:
+  secret: ${JWT_SECRET}
+  access-ttl-seconds: 900
+  refresh-ttl-seconds: 604800
+
 spring:
   config:
     import: "optional:file:./.env[.properties]"

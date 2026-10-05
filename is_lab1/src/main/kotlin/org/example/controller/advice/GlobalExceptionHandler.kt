@@ -39,4 +39,12 @@ class GlobalExceptionHandler {
             e.message ?: "ошибка при выполнении операции"
         )
 
+
+    @ExceptionHandler(IllegalArgumentException::class)
+    fun handleIllegalArgumentException(e: IllegalArgumentException): ProblemDetail =
+        ProblemDetail.forStatusAndDetail(
+            HttpStatus.BAD_REQUEST,
+            e.message ?: "неверные данные"
+        )
+
 }
