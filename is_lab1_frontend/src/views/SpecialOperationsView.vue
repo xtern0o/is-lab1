@@ -1,33 +1,104 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { apiGet, apiPost } from '@/config/api'
+import { ENTITY_DEFINITIONS } from '@/domain/entitySchemas'
 import { showError } from '@/shared/errors'
+
+interface ResultColumn {
+  key: string
+  label: string
+}
+
+type ResultRow = Record<string, unknown>
+
+const movieColumns = ENTITY_DEFINITIONS.movies.columns.map(({ key, label }) => ({ key, label }))
+const groupColumns: ResultColumn[] = [
+  { key: 'oscarsCount', label: 'OSCARS COUNT' },
+  { key: 'movieCount', label: 'MOVIE COUNT' },
+]
+const awardColumns: ResultColumn[] = [{ key: 'updatedMoviesCount', label: 'UPDATED MOVIES COUNT' }]
 
 const namePart = ref('')
 const goldenPalmLimit = ref('')
 const minimumLength = ref('')
 const additionalOscars = ref('')
+const resultColumns = ref<ResultColumn[]>([])
+const resultRows = ref<ResultRow[]>([])
+const resultReady = ref(false)
 
-function requireParams(...params: Array<[string, string]>) {
-  const missing = params.filter(([value]) => !value.trim()).map(([, label]) => label)
-  if (missing.length > 0) {
-    showError('не заполнены параметры', `введите: ${missing.join(', ')}`)
+function requireParams(...params: Array<[string | number, string]>) {
+  const missing = params.filter(([value]) => !String(value).trim()).map(([, label]) => label)
+  if (missing.length === 0) return true
+
+  showError('не заполнены параметры', `введите: ${missing.join(', ')}`)
+  return false
+}
+
+async function showResult(request: Promise<unknown>, columns: ResultColumn[]) {
+  try {
+    const data = await request
+    resultColumns.value = columns
+    resultRows.value = (Array.isArray(data) ? data : [data]) as ResultRow[]
+    resultReady.value = true
+  } catch (error) {
+    showError(
+      'не удалось выполнить операцию :((',
+      error instanceof Error ? error.message : 'нам не сообщили что за ошибка',
+    )
   }
 }
 
-function validateNameSearch() {
-  requireParams([namePart.value, 'часть названия'])
+function groupByOscars() {
+  void showResult(apiGet('/movies/stats/by-oscars-count'), groupColumns)
 }
 
-function validateGoldenPalmSearch() {
-  requireParams([goldenPalmLimit.value, 'количество golden_palm_count'])
-}
-
-function validateOscarAward() {
-  requireParams(
-    [minimumLength.value, 'минимальную длину'],
-    [additionalOscars.value, 'количество Оскаров'],
+function searchByName() {
+  if (!requireParams([namePart.value, 'часть названия'])) return
+  void showResult(
+    apiGet(`/movies/search/${encodeURIComponent(namePart.value.trim())}`),
+    movieColumns,
   )
+}
+
+function searchByGoldenPalmCount() {
+  if (!requireParams([goldenPalmLimit.value, 'количество golden_palm_count'])) return
+  void showResult(
+    apiGet(`/movies/golden-palm-count-less-than/${goldenPalmLimit.value}`),
+    movieColumns,
+  )
+}
+
+function findWithoutOscars() {
+  void showResult(apiGet('/movies/without-oscars'), movieColumns)
+}
+
+function awardOscars() {
+  if (
+    !requireParams(
+      [minimumLength.value, 'минимальную длину'],
+      [additionalOscars.value, 'количество Оскаров'],
+    )
+  ) {
+    return
+  }
+
+  void showResult(
+    apiPost('/movies/actions/award-oscars', {
+      minimumLength: Number(minimumLength.value),
+      additionalOscars: Number(additionalOscars.value),
+    }),
+    awardColumns,
+  )
+}
+
+function formatValue(key: string, value: unknown) {
+  if (value == null || value === '') return '—'
+
+  let text = String(value)
+  if (key === 'creationDate') text = text.slice(0, 10)
+  if (key === 'id' || key.endsWith('Id')) text = text.padStart(3, '0')
+  return text
 }
 </script>
 
@@ -43,7 +114,7 @@ function validateOscarAward() {
           <span>01</span>
           сгруппировать фильмы по количеству оскаров
         </p>
-        <button class="xp-button" type="button">Выполнить</button>
+        <button class="xp-button" type="button" @click="groupByOscars">Выполнить</button>
       </div>
 
       <div class="operation-row">
@@ -58,7 +129,7 @@ function validateOscarAward() {
             placeholder="часть названия..."
             aria-label="Часть названия фильма"
           />
-          <button class="xp-button" type="button" @click="validateNameSearch">Выполнить</button>
+          <button class="xp-button" type="button" @click="searchByName">Выполнить</button>
         </div>
       </div>
 
@@ -75,7 +146,7 @@ function validateOscarAward() {
             placeholder="количество..."
             aria-label="Количество Золотых пальм"
           />
-          <button class="xp-button" type="button" @click="validateGoldenPalmSearch">
+          <button class="xp-button" type="button" @click="searchByGoldenPalmCount">
             Выполнить
           </button>
         </div>
@@ -86,7 +157,7 @@ function validateOscarAward() {
           <span>04</span>
           получить фильмы без оскара
         </p>
-        <button class="xp-button" type="button">Выполнить</button>
+        <button class="xp-button" type="button" @click="findWithoutOscars">Выполнить</button>
       </div>
 
       <div class="operation-row operation-row--wide">
@@ -103,7 +174,7 @@ function validateOscarAward() {
             ДОБАВИТЬ
             <input v-model="additionalOscars" type="number" min="1" placeholder="оскаров" />
           </label>
-          <button class="xp-button xp-button--primary" type="button" @click="validateOscarAward">
+          <button class="xp-button xp-button--primary" type="button" @click="awardOscars">
             Выполнить
           </button>
         </div>
@@ -113,11 +184,32 @@ function validateOscarAward() {
     <section class="results-panel" aria-labelledby="results-title">
       <header class="results-header">
         <strong id="results-title">результат выполнения</strong>
-        <span>ожидаем запрос...</span>
+        <span>{{ resultReady ? `${resultRows.length} строк` : 'ожидаем запрос...' }}</span>
       </header>
-      <div class="empty-results">
+
+      <div v-if="!resultReady" class="empty-results">
         <p>здесь будет таблица с результатом</p>
         <span>выбери действие выше</span>
+      </div>
+
+      <div v-else class="result-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th v-for="column in resultColumns" :key="column.key">{{ column.label }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, index) in resultRows" :key="index">
+              <td v-for="column in resultColumns" :key="column.key">
+                {{ formatValue(column.key, row[column.key]) }}
+              </td>
+            </tr>
+            <tr v-if="resultRows.length === 0">
+              <td :colspan="resultColumns.length">ничего не найдено</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </section>
@@ -269,6 +361,46 @@ function validateOscarAward() {
   font-size: 10px;
 }
 
+.result-table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font:
+    700 11px/1.25 'Courier New',
+    monospace;
+}
+
+th,
+td {
+  padding: 11px 10px;
+  text-align: left;
+  border-right: 1px solid #a35237;
+  border-bottom: 1px solid #a35237;
+  white-space: nowrap;
+}
+
+th:last-child,
+td:last-child {
+  border-right: 0;
+}
+
+th {
+  color: #ffedcb;
+  background: var(--brick);
+  font-size: 9px;
+}
+
+tbody tr:nth-child(even) {
+  background: #f6d9a4;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 @media (max-width: 900px) {
   .operation-row {
     grid-template-columns: 1fr;
@@ -286,7 +418,6 @@ function validateOscarAward() {
     padding: 10px;
   }
 
-  .operations-header span,
   .results-header span {
     display: none;
   }

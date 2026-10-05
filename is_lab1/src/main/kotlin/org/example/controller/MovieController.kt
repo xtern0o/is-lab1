@@ -84,7 +84,7 @@ class MovieController(
 
     @PostMapping("/actions/award-oscars")
     fun awardOscars(
-        @RequestBody request: AwardOscarsByLengthRequest,
+        @Valid @RequestBody request: AwardOscarsByLengthRequest,
     ): AwardOscarsResponse =
         movieService.awardOscars(request)
 

@@ -6,9 +6,16 @@ if (!backendHost) {
 
 export const API_BASE_URL = `${backendHost.replace(/\/$/, '')}/api`
 
+async function checkResponse(response: Response) {
+  if (response.ok) return
+
+  const error = await response.json().catch(() => ({}))
+  throw new Error(error.detail || error.message || `HTTP ${response.status}`)
+}
+
 export async function apiGet(path: string) {
   const response = await fetch(API_BASE_URL + path)
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  await checkResponse(response)
   return response.json()
 }
 
@@ -18,7 +25,8 @@ export async function apiPost(path: string, body: object) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  await checkResponse(response)
+  return response.json()
 }
 
 export async function apiPut(path: string, body: object) {
@@ -27,13 +35,10 @@ export async function apiPut(path: string, body: object) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
+  await checkResponse(response)
 }
 
 export async function apiDelete(path: string) {
   const response = await fetch(API_BASE_URL + path, { method: 'DELETE' })
-  if (!response.ok) {
-    const { detail } = await response.json()
-    throw new Error(detail || `HTTP ${response.status}`)
-  }
+  await checkResponse(response)
 }
